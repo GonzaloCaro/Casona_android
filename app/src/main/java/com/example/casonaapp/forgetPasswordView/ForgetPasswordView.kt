@@ -12,12 +12,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.casonaapp.R
 import com.example.casonaapp.ui.theme.CasonaFontFamily
+import com.example.casonaapp.viewmodels.FontSizeViewModel
+import com.example.casonaapp.viewmodels.LocalFontSize
 
 @Composable
-fun ForgetPasswordView(onBack: () -> Unit) {
+fun ForgetPasswordView(
+    viewModel: FontSizeViewModel,
+    onBack: () -> Unit
+) {
+
     var email by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     var showDialog by remember { mutableStateOf(false) }
+
+    val fontSize = LocalFontSize.current
 
     Column(
         modifier = Modifier
@@ -35,7 +43,9 @@ fun ForgetPasswordView(onBack: () -> Unit) {
 
         Text(
             "Recuperar Contraseña",
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontSize = fontSize
+            ),
             color = MaterialTheme.colorScheme.secondary,
             textAlign = TextAlign.Center,
             fontFamily = CasonaFontFamily
@@ -49,7 +59,10 @@ fun ForgetPasswordView(onBack: () -> Unit) {
                 email = it
                 errorMessage = "" // limpiar error al escribir
             },
-            label = { Text("Correo electrónico") },
+            label = { Text("Correo electrónico",
+                fontSize = fontSize,
+                style = MaterialTheme.typography.bodyLarge.copy(fontSize = fontSize)) },
+            textStyle = LocalTextStyle.current.copy(fontSize = fontSize),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(50)
@@ -59,7 +72,9 @@ fun ForgetPasswordView(onBack: () -> Unit) {
             Text(
                 text = errorMessage,
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = 8.dp),
+                fontSize = fontSize
+
             )
         }
 
@@ -75,13 +90,25 @@ fun ForgetPasswordView(onBack: () -> Unit) {
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Enviar instrucciones")
+            Text("Enviar instrucciones", fontSize = fontSize)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(onClick = onBack) {
-            Text("Volver al Login")
+            Text("Volver al Login", fontSize = fontSize)
+        }
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(top = 100.dp)
+        ) {
+            Button(onClick = { viewModel.decreaseFontSize() }) {
+                Text("-", fontSize = fontSize)
+            }
+            Button(onClick = { viewModel.increaseFontSize() }) {
+                Text("+", fontSize = fontSize)
+            }
         }
     }
     if (showDialog) {

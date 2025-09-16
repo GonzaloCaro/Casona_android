@@ -20,9 +20,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import com.example.casonaapp.R
 import com.example.casonaapp.ui.theme.CasonaFontFamily
+import com.example.casonaapp.viewmodels.FontSizeViewModel
+import com.example.casonaapp.viewmodels.LocalFontSize
 
 @Composable
 fun RegisterView(
+    viewModel: FontSizeViewModel,
     onBack: () -> Unit,
     onRegisterSuccess: () -> Unit
 ) {
@@ -33,6 +36,8 @@ fun RegisterView(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
+
+    val fontSize = LocalFontSize.current
 
     Column(
         modifier = Modifier
@@ -50,7 +55,9 @@ fun RegisterView(
 
         Text(
             text = "Registrarse",
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontSize = fontSize
+            ),
             color = MaterialTheme.colorScheme.secondary,
             textAlign = TextAlign.Center,
             fontFamily = CasonaFontFamily
@@ -61,7 +68,12 @@ fun RegisterView(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Correo electrónico") },
+            label = {
+                Text("Correo electrónico", fontSize = fontSize,
+                style = MaterialTheme.typography.bodyLarge.copy(fontSize = fontSize)
+                )
+            },
+            textStyle = LocalTextStyle.current.copy(fontSize = fontSize),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(50)
@@ -72,7 +84,14 @@ fun RegisterView(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Contraseña") },
+            label = {
+                Text(
+                    "Contraseña",
+                    fontSize = fontSize,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = fontSize)
+                )
+            },
+            textStyle = LocalTextStyle.current.copy(fontSize = fontSize),
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -81,7 +100,7 @@ fun RegisterView(
         )
 
         if (message.isNotEmpty()) {
-            Text(text = message, color = MaterialTheme.colorScheme.error)
+            Text(text = message, fontSize = fontSize, color = MaterialTheme.colorScheme.error)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -99,13 +118,24 @@ fun RegisterView(
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Registrarse")
+            Text("Registrarse", fontSize = fontSize,)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(onClick = onBack) {
-            Text("Volver al Login")
+            Text("Volver al Login", fontSize = fontSize)
+        }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(top = 100.dp)
+        ) {
+            Button(onClick = { viewModel.decreaseFontSize() }) {
+                Text("-", fontSize = fontSize)
+            }
+            Button(onClick = { viewModel.increaseFontSize() }) {
+                Text("+", fontSize = fontSize)
+            }
         }
     }
 }
