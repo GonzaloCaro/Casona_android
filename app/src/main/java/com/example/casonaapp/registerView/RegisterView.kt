@@ -5,23 +5,20 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.rememberCoroutineScope
-import com.example.casonaapp.data.UserPreferences
-import kotlinx.coroutines.launch
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import com.example.casonaapp.R
 import com.example.casonaapp.ui.theme.CasonaFontFamily
 import com.example.casonaapp.viewmodels.FontSizeViewModel
 import com.example.casonaapp.viewmodels.LocalFontSize
+// Firebase
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun RegisterView(
@@ -29,13 +26,11 @@ fun RegisterView(
     onBack: () -> Unit,
     onRegisterSuccess: () -> Unit
 ) {
-    val context = LocalContext.current
-    val userPrefs = UserPreferences(context)
-    val scope = rememberCoroutineScope()
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
 
     val fontSize = LocalFontSize.current
 
@@ -68,11 +63,7 @@ fun RegisterView(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = {
-                Text("Correo electrónico", fontSize = fontSize,
-                style = MaterialTheme.typography.bodyLarge.copy(fontSize = fontSize)
-                )
-            },
+            label = { Text("Correo electrónico", fontSize = fontSize) },
             textStyle = LocalTextStyle.current.copy(fontSize = fontSize),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
@@ -84,13 +75,7 @@ fun RegisterView(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = {
-                Text(
-                    "Contraseña",
-                    fontSize = fontSize,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = fontSize)
-                )
-            },
+            label = { Text("Contraseña", fontSize = fontSize) },
             textStyle = LocalTextStyle.current.copy(fontSize = fontSize),
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
@@ -108,17 +93,33 @@ fun RegisterView(
         Button(
             onClick = {
                 if (email.isNotBlank() && password.isNotBlank()) {
-                    scope.launch {
-                        userPrefs.saveUser(email, password)
-                        onRegisterSuccess() // navega a HomeView
-                    }
+                    isLoading = true
+                    val auth = FirebaseAuth.getInstance()
+                    auth.createUserWithEmailAndPassword(email, password)
+                        .addOnCompleteListener { task ->
+                            isLoading = false
+                            if (task.isSuccessful) {
+                                onRegisterSuccess()
+                            } else {
+                                message = task.exception?.message ?: "Error al registrar usuario"
+                            }
+                        }
                 } else {
                     message = "Por favor completa todos los campos"
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isLoading
         ) {
-            Text("Registrarse", fontSize = fontSize,)
+            if (isLoading) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(20.dp)
+                )
+            } else {
+                Text("Registrarse", fontSize = fontSize)
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -126,6 +127,7 @@ fun RegisterView(
         TextButton(onClick = onBack) {
             Text("Volver al Login", fontSize = fontSize)
         }
+
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(top = 100.dp)

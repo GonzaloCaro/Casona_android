@@ -1,8 +1,6 @@
 package com.example.casonaapp.login
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,18 +15,17 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.platform.LocalContext
 import com.example.casonaapp.R
-import com.example.casonaapp.data.UserPreferences
 import com.example.casonaapp.ui.theme.CasonaFontFamily
 import com.example.casonaapp.ui.theme.LightBlue
 import com.example.casonaapp.ui.theme.Olive
 import com.example.casonaapp.viewmodels.FontSizeViewModel
 import com.example.casonaapp.viewmodels.LocalFontSize
 import com.example.casonaapp.viewmodels.ThemeViewModel
-import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.DarkMode
+// Firebase
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun LoginScreen(
@@ -43,13 +40,10 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
 
-    val context = LocalContext.current
-    val userPrefs = UserPreferences(context)
-    val scope = rememberCoroutineScope()
+    val auth = FirebaseAuth.getInstance()
 
     val fontSize = LocalFontSize.current
     val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
-    val currentColors = MaterialTheme.colorScheme
 
     Column(
         modifier = modifier
@@ -136,14 +130,18 @@ fun LoginScreen(
 
         Button(
             onClick = {
-                scope.launch {
-                    val storedUser = userPrefs.userFlow.collect { user ->
-                        if (user != null && user.first == username && user.second == password) {
-                            onLoginSuccess()
-                        } else {
-                            message = "Usuario o contraseña incorrectos"
+                if (username.isNotEmpty() && password.isNotEmpty()) {
+                    auth.signInWithEmailAndPassword(username, password)
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                // Login exitoso
+                                onLoginSuccess()
+                            } else {
+                                message = task.exception?.localizedMessage ?: "Error al iniciar sesión"
+                            }
                         }
-                    }
+                } else {
+                    message = "Por favor completa los campos"
                 }
             },
             modifier = Modifier.fillMaxWidth()

@@ -1,7 +1,6 @@
 package com.example.casonaapp
 
 import android.os.Bundle
-import android.view.Surface
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,6 +21,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.casonaapp.viewmodels.LocalFontSize
 import com.example.casonaapp.viewmodels.ThemeViewModel
 import androidx.compose.material3.Surface
+import com.example.casonaapp.eventDetails.EventDetailsView
+import com.example.casonaapp.eventManagement.CreateEditEventView
+import com.example.casonaapp.eventManagement.EventManagementView
+import com.example.casonaapp.Profile.ProfileView
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,6 +85,35 @@ fun AppNavigation(
             composable("home") {
                 HomeView(
                     viewModel = fontSizeViewModel,
+                    navController = navController
+                )
+            }
+
+            composable("profile") {
+                ProfileView(onBack = { navController.popBackStack() })
+            }
+
+            composable("eventManagement") {
+                EventManagementView(navController = navController)
+            }
+
+            composable("createEditEvent") {
+                CreateEditEventView(navController = navController)
+            }
+
+            composable("createEditEvent/{eventId}") { backStackEntry ->
+                val eventId = backStackEntry.arguments?.getString("eventId")
+                CreateEditEventView(
+                    navController = navController,
+                    eventId = eventId
+                )
+            }
+
+            composable("eventDetails/{eventId}") { backStackEntry ->
+                val eventId = backStackEntry.arguments?.getString("eventId")
+                EventDetailsView(
+                    navController = navController,
+                    eventId = eventId ?: ""
                 )
             }
         }
