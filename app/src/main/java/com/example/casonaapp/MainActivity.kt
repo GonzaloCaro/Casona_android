@@ -1,6 +1,8 @@
 package com.example.casonaapp
 
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -25,15 +27,42 @@ import com.example.casonaapp.eventDetails.EventDetailsView
 import com.example.casonaapp.eventManagement.CreateEditEventView
 import com.example.casonaapp.eventManagement.EventManagementView
 import com.example.casonaapp.Profile.ProfileView
+import com.example.casonaapp.userManagment.CreateEditUserView
+import com.example.casonaapp.userManagment.UserManagementView
+import com.google.firebase.auth.FirebaseAuth
 
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        private const val AUDIO_PERMISSION_REQUEST_CODE = 123
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            AUDIO_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Permiso concedido
+                    Toast.makeText(this, "Permiso de micrófono concedido", Toast.LENGTH_SHORT).show()
+                } else {
+                    // Permiso denegado
+                    Toast.makeText(this, "Permiso de micrófono denegado", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             val themeViewModel: ThemeViewModel = viewModel()
             val fontSizeViewModel: FontSizeViewModel = viewModel()
+
 
             CasonaAppTheme(themeViewModel = themeViewModel) {
                 Surface(
@@ -58,13 +87,22 @@ fun AppNavigation(
     val navController = rememberNavController()
     val fontSize = fontSizeViewModel.fontSize.collectAsState()
 
+    val auth = FirebaseAuth.getInstance()
+    val currentUser = auth.currentUser
+    val startDestination = if (currentUser != null) "home" else "login"
+
     CompositionLocalProvider(LocalFontSize provides fontSize.value) {
-        NavHost(navController = navController, startDestination = "login") {
+        NavHost(navController = navController, startDestination = startDestination) {
+
             composable("login") {
                 LoginScreen(
                     onForgotPasswordClick = { navController.navigate("forgot_password") },
                     onRegisterClick = { navController.navigate("register") },
-                    onLoginSuccess = { navController.navigate("home") },
+                    onLoginSuccess = {
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    },
                     viewModel = fontSizeViewModel,
                     themeViewModel = themeViewModel,
                 )
@@ -79,7 +117,11 @@ fun AppNavigation(
                 RegisterView(
                     viewModel = fontSizeViewModel,
                     onBack = { navController.popBackStack() },
-                    onRegisterSuccess = { navController.navigate("home") }
+                    onRegisterSuccess = {
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }
                 )
             }
             composable("home") {
@@ -114,6 +156,22 @@ fun AppNavigation(
                 EventDetailsView(
                     navController = navController,
                     eventId = eventId ?: ""
+                )
+            }
+
+            composable("userManagement") {
+                UserManagementView(navController = navController)
+            }
+
+            composable("createEditUser") {
+                CreateEditUserView(navController = navController)
+            }
+
+            composable("createEditUser/{userId}") { backStackEntry ->
+                val userId = backStackEntry.arguments?.getString("userId")
+                CreateEditUserView(
+                    navController = navController,
+                    userId = userId
                 )
             }
         }

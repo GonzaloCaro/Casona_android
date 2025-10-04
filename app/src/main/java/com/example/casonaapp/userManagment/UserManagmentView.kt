@@ -1,48 +1,49 @@
-package com.example.casonaapp.eventManagement
+package com.example.casonaapp.userManagment
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.ConfirmationNumber
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PersonPin
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.casonaapp.components.SimpleTopAppBar
-import com.example.casonaapp.data.Event
-import com.example.casonaapp.viewmodels.EventViewModel
+import com.example.casonaapp.data.UserProfile
+import com.example.casonaapp.viewmodels.UserViewModel
 import com.example.casonaapp.viewmodels.LocalFontSize
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Composable
-fun EventManagementView(
+fun UserManagementView(
     navController: NavHostController,
-    viewModel: EventViewModel = viewModel()
+    viewModel: UserViewModel = viewModel()
 ) {
     val fontSize = LocalFontSize.current
-    val events by viewModel.events.collectAsState()
+    val users by viewModel.users.collectAsState()
 
     LaunchedEffect(Unit) {
-        viewModel.loadEvents()
+        viewModel.loadUsers()
     }
 
     LaunchedEffect(Unit) {
-        println("DEBUG: Events AAAAAA: ${events}")
+        println("DEBUG: Users AAAAAA: $users")
     }
     Scaffold(
         topBar = {
             SimpleTopAppBar(
-                title = "Gestión de Eventos",
+                title = "Gestión de Useros",
                 onMenuClick = { navController.popBackStack() },
                 customIcon = Icons.AutoMirrored.Filled.ArrowBack
             )
@@ -50,10 +51,10 @@ fun EventManagementView(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    navController.navigate("createEditEvent")
+                    navController.navigate("createEditUser")
                 }
             ) {
-                Icon(Icons.Default.Add, "Crear evento")
+                Icon(Icons.Default.Add, "Crear usero")
             }
         }
     ) { innerPadding ->
@@ -65,28 +66,38 @@ fun EventManagementView(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                "Gestión de Eventos - Panel Admin",
+                "Gestión de Usuarios - Panel Admin",
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontSize = fontSize
                 )
             )
 
-            events.forEach { event ->
-                EventManagementCard(event = event, fontSize = fontSize, viewModel, navController)
+            users.forEach { user ->
+                UserManagementCard(user = user, fontSize = fontSize, viewModel, navController)
             }
         }
     }
 }
 
 @Composable
-fun EventManagementCard(
-    event: Event,
+fun UserManagementCard(
+    user: UserProfile,
     fontSize: androidx.compose.ui.unit.TextUnit,
-    viewModel: EventViewModel = viewModel(),
+    viewModel: UserViewModel = viewModel(),
     navController: NavHostController? = null
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+
+    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+
+    val createdAtText = user.createdAt.let {
+        formatter.format(it)
+    } ?: "Sin fecha"
+
+    val lastLoginText = user.lastLogin?.let {
+        formatter.format(it)
+    } ?: "Nunca"
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -102,15 +113,15 @@ fun EventManagementCard(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        event.title,
+                        user.userName,
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontSize = fontSize,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                            fontWeight = FontWeight.Bold
                         )
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        event.description,
+                        user.email,
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontSize = fontSize * 0.9f
                         ),
@@ -125,7 +136,7 @@ fun EventManagementCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Opciones del evento"
+                            contentDescription = "Opciones del usero"
                         )
                     }
 
@@ -142,8 +153,8 @@ fun EventManagementCard(
                             },
                             onClick = {
                                 showMenu = false
-                                viewModel.setSelectedEvent(event)
-                                navController?.navigate("createEditEvent/${event.id}")
+                                viewModel.setSelectedUser(user)
+                                navController?.navigate("createEditUser/${user.uid}")
                             },
                             leadingIcon = {
                                 Icon(Icons.Default.Edit, null)
@@ -170,62 +181,41 @@ fun EventManagementCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Información del evento
+            // Información del usuario
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Fecha y ubicación
+                // Tipo y fecha creacion
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    InfoRow(
+                        icon = Icons.Default.PersonPin,
+                        label = "Tipo de usuario",
+                        text = if (user.userType.toString() === ("ADMIN")) "Admin" else "Cliente",
+                        fontSize = fontSize
+                    )
                     InfoRow(
                         icon = Icons.Default.DateRange,
-                        text = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(event.date),
-                        fontSize = fontSize
-                    )
-                    InfoRow(
-                        icon = Icons.Default.LocationOn,
-                        text = event.location,
+                        label = "Creado",
+                        text = createdAtText,
                         fontSize = fontSize
                     )
                 }
 
-                // Precio y tickets
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    InfoRow(
-                        icon = Icons.Default.AttachMoney,
-                        text = "$${event.price}",
-                        fontSize = fontSize
-                    )
-                    InfoRow(
-                        icon = Icons.Default.ConfirmationNumber,
-                        text = "${event.availableTickets} tickets",
-                        fontSize = fontSize
-                    )
-                }
 
-                // Estado y creador
+                // ultimo login
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Estado del evento
-                    Text(
-                        if (event.active) "Activo" else "Inactivo",
-                        fontSize = fontSize * 0.9f
-                    )
-                    // Fecha de creación
-                    Text(
-                        "Creado: ${java.text.SimpleDateFormat("dd/MM/yy", java.util.Locale.getDefault()).format(event.createdAt)}",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = fontSize * 0.8f,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    InfoRow(
+                        icon = Icons.Default.DateRange,
+                        label ="Ultimo inicio sesion: ",
+                        text= lastLoginText,
+                        fontSize = fontSize
                     )
                 }
             }
@@ -240,12 +230,12 @@ fun EventManagementCard(
                 // Botón para desactivar/activar
                 OutlinedButton(
                     onClick = {
-                        viewModel.updateEvent(event.id, event.copy(active = !event.active))
+                        viewModel.updateUser(user.uid, user.copy(active = !user.active))
                     },
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        if (event.active) "Desactivar" else "Activar",
+                        if (user.active) "Desactivar" else "Activar",
                         fontSize = fontSize * 0.9f
                     )
                 }
@@ -254,7 +244,7 @@ fun EventManagementCard(
                 Button(
                     onClick = {
                         // Navegar a vista de detalles o previsualización
-                        navController?.navigate("eventDetails/${event.id}")
+                        navController?.navigate("userDetails/${user.uid}")
                     },
                     modifier = Modifier.weight(1f)
                 ) {
@@ -270,13 +260,13 @@ fun EventManagementCard(
             onDismissRequest = { showDeleteDialog = false },
             title = {
                 Text(
-                    "Eliminar Evento",
+                    "Eliminar Usuario",
                     style = MaterialTheme.typography.titleMedium.copy(fontSize = fontSize)
                 )
             },
             text = {
                 Text(
-                    "¿Estás seguro de que quieres eliminar el evento \"${event.title}\"? Esta acción no se puede deshacer.",
+                    "¿Estás seguro de que quieres eliminar el usuario \"${user.userName}\"? Esta acción no se puede deshacer.",
                     fontSize = fontSize
                 )
             },
@@ -284,7 +274,7 @@ fun EventManagementCard(
                 TextButton(
                     onClick = {
                         showDeleteDialog = false
-                        viewModel.deleteEvent(event.id)
+                        viewModel.deleteUser(user.uid)
                     }
                 ) {
                     Text(
@@ -310,27 +300,50 @@ fun EventManagementCard(
 fun InfoRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     text: String,
-    fontSize: androidx.compose.ui.unit.TextUnit
+    fontSize: androidx.compose.ui.unit.TextUnit,
+    label: String = "",
+
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth(0.5f)
+        modifier = Modifier
+            .fillMaxWidth(0.5f)
+
+
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = fontSize * 0.9f,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            maxLines = 1,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-        )
+        Column {
+            Row {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                if (label.isNotEmpty()) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = fontSize * 1f,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            Text(
+                text,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontSize = fontSize * 0.9f,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
+
     }
 }

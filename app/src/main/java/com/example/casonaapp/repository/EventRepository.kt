@@ -9,7 +9,22 @@ import kotlinx.coroutines.tasks.await
 class EventRepository {
     private val db: FirebaseFirestore = Firebase.firestore
 
-    suspend fun getEvents(): List<Event> {
+    suspend fun getAllEvents(): List<Event> {
+        return try {
+            val result = db.collection("events")
+                .get()
+                .await()
+
+            result.documents.map { doc ->
+                doc.toObject(Event::class.java)?.copy(id = doc.id) ?: Event()
+            }.filter { it.title.isNotBlank() }
+        } catch (e: Exception) {
+            println("ERROR al cargar eventos: ${e.message}")
+            emptyList()
+        }
+    }
+
+    suspend fun getActiveEvents(): List<Event> {
         return try {
             val result = db.collection("events")
                 .whereEqualTo("active", true)
@@ -18,9 +33,9 @@ class EventRepository {
 
             result.documents.map { doc ->
                 doc.toObject(Event::class.java)?.copy(id = doc.id) ?: Event()
-            }.filter { it.title.isNotBlank() } // Filtra eventos vacíos
+            }.filter { it.title.isNotBlank() }
         } catch (e: Exception) {
-            println("ERROR al cargar eventos: ${e.message}") // Agrega este log
+            println("ERROR al cargar eventos: ${e.message}")
             emptyList()
         }
     }

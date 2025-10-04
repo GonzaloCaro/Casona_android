@@ -50,10 +50,12 @@ fun HomeView(
     val userProfile by profileViewModel.userProfile.collectAsState()
     val events by eventViewModel.events.collectAsState()
     val isLoading by eventViewModel.isLoading.collectAsState()
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var eventToDelete by remember { mutableStateOf<Event?>(null) }
 
     // Cargar eventos al iniciar
     LaunchedEffect(Unit) {
-        eventViewModel.loadEvents()
+        eventViewModel.loadActiveEvents()
     }
 
     // Items del menú base
@@ -61,6 +63,7 @@ fun HomeView(
         MenuItem("home", "Inicio", Icons.Default.Home, "Página principal"),
         MenuItem("profile", "Perfil", Icons.Default.Person, "Mi perfil de usuario"),
         MenuItem("events", "Gestión de Eventos", Icons.Default.Event, "Administrar eventos", requiresAdmin = true),
+        MenuItem("users", "Gestión de Usuarios", Icons.Default.SupervisedUserCircle, "Administrar usuarios", requiresAdmin = true),
         MenuItem("settings", "Configuración", Icons.Default.Settings, "Ajustes de la app"),
         MenuItem("about", "Acerca de", Icons.Default.Info, "Información de la app"),
         MenuItem("logout", "Cerrar sesión", Icons.AutoMirrored.Filled.ExitToApp, "Salir de la aplicación")
@@ -157,11 +160,12 @@ fun HomeView(
                                 navController.navigate("createEditEvent/${event.id}")
                             },
                             onDelete = {
-                                // Mostrar diálogo de confirmación
-                                eventViewModel.deleteEvent(event.id)
+                                eventToDelete = event
+                                showDeleteDialog = true
                             },
                             onView = {
                                 // Navegar a vista detallada del evento
+                                eventViewModel.setSelectedEvent(event)
                                 navController.navigate("eventDetails/${event.id}")
                             }
                         )
@@ -198,6 +202,47 @@ fun HomeView(
             }
         }
     }
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = {
+                Text(
+                    "Eliminar Evento",
+                    style = MaterialTheme.typography.titleMedium.copy(fontSize = fontSize)
+                )
+            },
+            text = {
+                Text(
+                    "¿Estás seguro de que quieres eliminar el evento \"${eventToDelete?.title}\"? Esta acción no se puede deshacer.",
+                    fontSize = fontSize
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        eventToDelete?.id?.let { eventId ->
+                            eventViewModel.deleteEvent(eventId)
+                        }
+                        eventToDelete = null
+                    }
+                ) {
+                    Text(
+                        "Eliminar",
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = fontSize
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteDialog = false }
+                ) {
+                    Text("Cancelar", fontSize = fontSize)
+                }
+            }
+        )
+    }
 }
 
 // Función para manejar clicks en el menú
@@ -206,6 +251,7 @@ private fun handleMenuItemClick(itemId: String, navController: NavHostController
         "home" -> navController.navigate("home")
         "profile" -> navController.navigate("profile")
         "events" -> navController.navigate("eventManagement") // Nueva ruta
+        "users" -> navController.navigate("userManagement") // Nueva ruta
         "settings" -> { /* Navegar a configuración */ }
         "about" -> { /* Navegar a acerca de */ }
         "logout" -> {
@@ -374,6 +420,7 @@ fun EventCard(
             }
         }
     }
+
 }
 
 // Header del Drawer

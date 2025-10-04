@@ -5,7 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +15,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.casonaapp.components.DatePickerDialog
 import com.example.casonaapp.components.SimpleTopAppBar
+import com.example.casonaapp.components.TextEditorDialog
+import com.example.casonaapp.components.VoiceInputDialog
 import com.example.casonaapp.data.Event
 import com.example.casonaapp.viewmodels.EventViewModel
 import com.example.casonaapp.viewmodels.LocalFontSize
@@ -25,7 +27,7 @@ import java.util.*
 @Composable
 fun CreateEditEventView(
     navController: NavHostController,
-    eventId: String? = null, // Si es null, es crear; si tiene valor, es editar
+    eventId: String? = null,
     viewModel: EventViewModel = viewModel()
 ) {
     val fontSize = LocalFontSize.current
@@ -43,6 +45,11 @@ fun CreateEditEventView(
     var availableTickets by remember { mutableStateOf("") }
     var selectedDate by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var showDatePicker by remember { mutableStateOf(false) }
+
+    // Estados para funcionalidades de Hablar y Escribir
+    var showVoiceInputDialog by remember { mutableStateOf(false) }
+    var showTextEditorDialog by remember { mutableStateOf(false) }
+    var currentVoiceInputField by remember { mutableStateOf<VoiceInputField?>(null) }
 
     LaunchedEffect(Unit) {
         println("DEBUG: CreateEditEventView - eventId: $eventId")
@@ -160,34 +167,131 @@ fun CreateEditEventView(
             )
 
             // Campo Título
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Título del evento") },
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                isError = title.isBlank()
-            )
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Título del Evento",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = fontSize)
+                        )
+                        IconButton(
+                            onClick = {
+                                currentVoiceInputField = VoiceInputField.TITLE
+                                showVoiceInputDialog = true
+                            }
+                        ) {
+                            Icon(Icons.Default.Mic, "Usar voz para título")
+                        }
+                    }
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("Ingresa el título del evento") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        isError = title.isBlank()
+                    )
+                }
+            }
 
             // Campo Descripción
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Descripción") },
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                maxLines = 3,
-                isError = description.isBlank()
-            )
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Descripción del Evento",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = fontSize)
+                        )
+                        Row {
+                            IconButton(
+                                onClick = {
+                                    // Abrir editor de texto enriquecido
+                                    showTextEditorDialog = true
+                                }
+                            ) {
+                                Icon(Icons.Default.Edit, "Editor de texto")
+                            }
+                            IconButton(
+                                onClick = {
+                                    currentVoiceInputField = VoiceInputField.DESCRIPTION
+                                    showVoiceInputDialog = true
+                                }
+                            ) {
+                                Icon(Icons.Default.Mic, "Usar voz para descripción")
+                            }
+                        }
+                    }
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Describe el evento") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp),
+                        maxLines = 5
+                    )
+
+                    // Contador de caracteres
+                    Text(
+                        "${description.length}/500 caracteres",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontSize = fontSize * 0.8f,
+                            color = if (description.length > 500) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        modifier = Modifier.align(Alignment.End)
+                    )
+                }
+            }
 
             // Campo Ubicación
-            OutlinedTextField(
-                value = location,
-                onValueChange = { location = it },
-                label = { Text("Ubicación") },
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                isError = location.isBlank()
-            )
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Ubicación",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = fontSize)
+                        )
+                        IconButton(
+                            onClick = {
+                                currentVoiceInputField = VoiceInputField.LOCATION
+                                showVoiceInputDialog = true
+                            }
+                        ) {
+                            Icon(Icons.Default.Mic, "Usar voz para ubicación")
+                        }
+                    }
+                    OutlinedTextField(
+                        value = location,
+                        onValueChange = { location = it },
+                        label = { Text("Dirección del evento") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        isError = location.isBlank()
+                    )
+                }
+            }
 
             // Selector de Fecha
             Card(
@@ -335,8 +439,76 @@ fun CreateEditEventView(
                 Text("Cancelar")
             }
         }
+
+        if (showVoiceInputDialog) {
+            VoiceInputDialog(
+                onDismiss = {
+                    showVoiceInputDialog = false
+                    currentVoiceInputField = null
+                },
+                onTextRecognized = { recognizedText ->
+                    when (currentVoiceInputField) {
+                        VoiceInputField.TITLE -> {
+                            title = if (title.isNotEmpty()) {
+                                "$title $recognizedText"
+                            } else {
+                                recognizedText
+                            }
+                        }
+                        VoiceInputField.DESCRIPTION -> {
+                            description = if (description.isNotEmpty()) {
+                                "$description $recognizedText"
+                            } else {
+                                recognizedText
+                            }
+                        }
+                        VoiceInputField.LOCATION -> {
+                            location = if (location.isNotEmpty()) {
+                                "$location $recognizedText"
+                            } else {
+                                recognizedText
+                            }
+                        }
+                        null -> {
+                            description = if (description.isNotEmpty()) {
+                                "$description $recognizedText"
+                            } else {
+                                recognizedText
+                            }
+                        }
+                    }
+                    showVoiceInputDialog = false
+                    currentVoiceInputField = null
+                },
+                fieldName = when (currentVoiceInputField) { // NUEVO: pasar el nombre del campo
+                    VoiceInputField.TITLE -> "Título"
+                    VoiceInputField.DESCRIPTION -> "Descripción"
+                    VoiceInputField.LOCATION -> "Ubicación"
+                    null -> "Descripción"
+                }
+            )
+        }
+
+
+        // Diálogo de Editor de Texto Enriquecido
+        if (showTextEditorDialog) {
+            TextEditorDialog(
+                initialText = description,
+                onDismiss = { showTextEditorDialog = false },
+                onSave = { editedText ->
+                    description = editedText
+                    showTextEditorDialog = false
+                }
+            )
+        }
+
     }
 }
+
+enum class VoiceInputField {
+    TITLE, DESCRIPTION, LOCATION
+}
+
 
 // Función de validación del formulario
 private fun validateForm(
@@ -354,3 +526,4 @@ private fun validateForm(
             availableTickets.isNotBlank() &&
             availableTickets.toIntOrNull() != null
 }
+

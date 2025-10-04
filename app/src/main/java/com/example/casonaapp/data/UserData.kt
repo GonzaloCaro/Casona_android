@@ -7,11 +7,12 @@ data class UserProfile(
     val email: String = "",
     val userName: String = "",
     val displayName: String = "",
-    val createdAt: Date? = null,
+    val createdAt: Date = Date(),
     val lastLogin: Date? = null,
+    val active: Boolean = true,
     val phoneNumber: String? = null,
     val bio: String = "",
-    val userType: UserType = UserType.CLIENT
+    val userType: UserType? = UserType.CLIENT
 )
 
 enum class UserType {

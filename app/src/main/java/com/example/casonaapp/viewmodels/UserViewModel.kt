@@ -2,17 +2,18 @@ package com.example.casonaapp.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.casonaapp.data.Event
-import com.example.casonaapp.repository.EventRepository
+import com.example.casonaapp.data.UserProfile
+import com.example.casonaapp.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class EventViewModel : ViewModel() {
-    private val repository = EventRepository()
-
-    private val _events = MutableStateFlow<List<Event>>(emptyList())
-    val events = _events.asStateFlow()
+class UserViewModel : ViewModel(){
+    
+    private val repository = UserRepository()
+    
+    private val _users = MutableStateFlow<List<UserProfile>>(emptyList())
+    val users = _users.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
@@ -20,52 +21,52 @@ class EventViewModel : ViewModel() {
     private val _message = MutableStateFlow<String?>(null)
     val message = _message.asStateFlow()
 
-    private val _selectedEvent = MutableStateFlow<Event?>(null)
-    val selectedEvent = _selectedEvent.asStateFlow()
+    private val _selectedUser = MutableStateFlow<UserProfile?>(null)
+    val selectedUser = _selectedUser.asStateFlow()
 
     private val _operationSuccess = MutableStateFlow(false)
     val operationSuccess = _operationSuccess.asStateFlow()
 
-    fun loadEvents() {
+    fun loadUsers() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val loadedEvents = repository.getAllEvents()
-                _events.value = loadedEvents
+                val loadedUsers = repository.getAllUsers()
+                _users.value = loadedUsers
             } catch (e: Exception) {
-                _message.value = "Error al cargar eventos: ${e.message}"
+                _message.value = "Error al cargar usersos: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    fun loadActiveEvents() {
+    fun loadActiveUsers() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val loadedEvents = repository.getActiveEvents()
-                _events.value = loadedEvents
+                val loadedUsers = repository.getAllUsers()
+                _users.value = loadedUsers
             } catch (e: Exception) {
-                _message.value = "Error al cargar eventos activos: ${e.message}"
+                _message.value = "Error al cargar useros activos: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    fun createEvent(event: Event) {
+    fun createUser(user: UserProfile) {
         viewModelScope.launch {
             _isLoading.value = true
             _operationSuccess.value = false
             try {
-                val eventId = repository.createEvent(event)
-                if (eventId != null) {
-                    _message.value = "Evento creado exitosamente"
+                val userId = repository.createUser(user)
+                if (userId != null) {
+                    _message.value = "Usero creado exitosamente"
                     _operationSuccess.value = true
-                    loadEvents() // Recargar la lista
+                    loadUsers() // Recargar la lista
                 } else {
-                    _message.value = "Error al crear evento"
+                    _message.value = "Error al crear usero"
                     _operationSuccess.value = false
                 }
             } catch (e: Exception) {
@@ -77,27 +78,27 @@ class EventViewModel : ViewModel() {
         }
     }
 
-    fun setSelectedEvent(event: Event) {
-        _selectedEvent.value = event
+    fun setSelectedUser(user: UserProfile) {
+        _selectedUser.value = user
     }
 
     // Agrega esta función para limpiar la selección
-    fun clearSelectedEvent() {
-        _selectedEvent.value = null
+    fun clearSelectedUser() {
+        _selectedUser.value = null
     }
 
-    fun updateEvent(eventId: String, event: Event) {
+    fun updateUser(userId: String, user: UserProfile) {
         viewModelScope.launch {
             _isLoading.value = true
             _operationSuccess.value = false
             try {
-                val success = repository.updateEvent(eventId, event)
+                val success = repository.updateUser(userId, user)
                 if (success) {
-                    _message.value = "Evento actualizado exitosamente"
+                    _message.value = "Usero actualizado exitosamente"
                     _operationSuccess.value = true
-                    loadEvents() // Recargar la lista
+                    loadUsers() // Recargar la lista
                 } else {
-                    _message.value = "Error al actualizar evento"
+                    _message.value = "Error al actualizar usero"
                     _operationSuccess.value = false
                 }
             } catch (e: Exception) {
@@ -109,18 +110,18 @@ class EventViewModel : ViewModel() {
         }
     }
 
-    fun deleteEvent(eventId: String) {
+    fun deleteUser(userId: String) {
         viewModelScope.launch {
             _isLoading.value = true
             _operationSuccess.value = false
             try {
-                val success = repository.deleteEvent(eventId)
+                val success = repository.deleteUser(userId)
                 if (success) {
-                    _message.value = "Evento eliminado exitosamente"
+                    _message.value = "Usero eliminado exitosamente"
                     _operationSuccess.value = true
-                    loadEvents() // Recargar la lista
+                    loadUsers() // Recargar la lista
                 } else {
-                    _message.value = "Error al eliminar evento"
+                    _message.value = "Error al eliminar usero"
                     _operationSuccess.value = false
                 }
             } catch (e: Exception) {
@@ -132,25 +133,9 @@ class EventViewModel : ViewModel() {
         }
     }
 
-    fun loadEventById(eventId: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                val event = repository.getEventById(eventId)
-                if (event != null) {
-                    _selectedEvent.value = event
-                } else {
-                    _message.value = "Evento no encontrado"
-                }
-            } catch (e: Exception) {
-                _message.value = "Error al cargar evento: ${e.message}"
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
 
     fun resetOperationSuccess() {
         _operationSuccess.value = false
     }
+    
 }
